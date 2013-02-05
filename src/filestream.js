@@ -35,5 +35,13 @@
 
 	};
 
-	exports.filestream = filestream;
+	// expose filestream to the window and as an AMD module
+	if (typeof define == 'function' && typeof define.amd == 'object' && define.amd) {
+		exports.filestream = filestream;
+		define(function(){
+			return filestream;
+		});
+	} else {
+		exports.filestream = filestream;
+	}
 })(this);

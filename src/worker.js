@@ -6,11 +6,12 @@ var cancel = function() {
 
 };
 
-var send = function(chunk, location) {
+var send = function(chunk, url) {
+	var fd = new FormData();
+	fd.append('file', chunk);
 	var xhr = new XMLHttpRequest();
-	xhr.open('POST', location, false);
-	xhr.onload = function(){};
-	xhr.send(chunk);
+	xhr.open('POST', '/upload', false);
+	xhr.send(fd);
 };
 
 var createChunk = function(file, start, end) {
@@ -25,16 +26,20 @@ var createChunk = function(file, start, end) {
 	}
 };
 
-var stream = function(file, location) {
+var stream = function(file, url) {
 	var CHUNK_SIZE = 1024 * 1024;
 	var size = file.size;
 	var start = 0;
 	var end = CHUNK_SIZE;
 	var chunk;
 
+	if (size < CHUNK_SIZE) {
+		send(file, url);
+	}
+
 	while (start < size) {
 		chunk = createChunk(file, start, end);
-		send(chunk, location);
+		send(chunk, url);
 		start = end;
 		end = start + CHUNK_SIZE;
 	}
@@ -42,10 +47,10 @@ var stream = function(file, location) {
 
 self.onmessage = function(e) {
 	var options = e.data;
-	var location = options.location;
+	var url = options.url;
 	var files = [].slice.call(options.files);
 	files.forEach(function(file){
-		stream(file, location);
+		stream(file, url);
 	});
 	self.postMessage('done');
 };

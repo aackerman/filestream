@@ -54,13 +54,13 @@
 		}
 
 		while (start < size) {
-			chunk = createChunk(file, start, end);
 			send(chunk, url);
 			start = end;
 			end = start + CHUNK_SIZE;
 		}
 	};
 
+	// base function
 	var filestream = function(attrs) {
 		ondragover(attrs.el);
 		ondrop(attrs.el, attrs.url);

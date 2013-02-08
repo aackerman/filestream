@@ -36,10 +36,11 @@
 	Filestream.prototype.sendFile = function() {
 		var chunker = new Chunker(this.file);
 		while (chunk = chunker.nextSlice()) {
-			xhr({
-				blob: chunk,
-				name: this.file.name,
+			this.xhr({
+				url: '/upload',
+				file: chunk,
 				blobsize: chunk.size,
+				filename: this.file.name,
 				filesize: this.file.size
 			});
 		}
@@ -48,9 +49,10 @@
 	Filestream.prototype.xhr = function(filedata) {
 		var formdata = new FormData();
 		var xhr = new XMLHttpRequest();
-		Object.keys(filedata).forEach(function(key){
-			formdata.append(key, filedata[key]);
-		});
+		formdata.append('file', filedata.file);
+		formdata.append('blobsize', filedata.blobsize);
+		formdata.append('filesize', filedata.filesize);
+		formdata.append('filename', filedata.filename);
 		xhr.open('POST', filedata.url, false);
 		xhr.send(formdata);
 	};
@@ -66,27 +68,26 @@
 		var chunk
 			, start = this.start
 			, end = this.end
-			, file = this.file
-			, size = file.size
-			, CHUNK_SIZE = this.CHUNK_SIZE;
+			, file = this.file;
 
-		end = start + size;
+		this.end = this.start + this.CHUNK_SIZE;
 
-		if (end > size) {
-			end = size;
+		if (this.end > file.size) {
+			this.end = file.size;
 		}
 
-		if (file.mozSlice) {
-			chunk = file.mozSlice(start, end);
-		}
-		if (file.webkitSlice) {
-			chunk = file.webkitSlice(start, end);
-		}
 		if (file.slice) {
-			chunk = file.slice(start, end);
+			chunk = file.slice(this.start, this.end);
+		} else {
+			if (file.mozSlice) {
+				chunk = file.mozSlice(this.start, this.end);
+			}
+			if (file.webkitSlice) {
+				chunk = file.webkitSlice(this.start, this.end);
+			}
 		}
 
-		start = end;
+		this.start = this.end;
 
 		if(chunk.size === 0) {
 			return null;

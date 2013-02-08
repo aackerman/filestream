@@ -18,8 +18,7 @@
 	};
 
 	var stream = function(file) {
-		var fs = new Filestream(file);
-		fs.sendFile();
+		new Filestream(file).sendFile();
 	};
 
 	// base function

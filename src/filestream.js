@@ -1,9 +1,4 @@
 ;(function(exports){
-	var noop = function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-	};
-
 	var ondragover = function(el){
 		el.addEventListener('dragover', function(e){
 			noop(e);
@@ -22,57 +17,87 @@
 		});
 	};
 
-	var sendfile = function(file) {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
-		fd.append('file', file);
-		fd.append('name', file.name);
-		fd.append('size', file.size);
-		xhr.open('POST', '/upload', false);
-		xhr.send(fd);
-	};
-
-	var chunkfile = function(file) {
-		var CHUNK_SIZE = 1024 * 1024 * 5;
-		var start = 0, end = 0, chunk;
-		while (start < file.size) {
-			end = start + CHUNK_SIZE;
-			if (end > file.size) {
-				end = file.size;
-			}
-
-			if (file.mozSlice) {
-				chunk = file.mozSlice(start, end);
-			}
-			if (file.webkitSlice) {
-				chunk = file.webkitSlice(start, end);
-			}
-			if (file.slice) {
-				chunk = file.slice(start, end);
-			}
-
-			sendfile(chunk);
-			start = end;
-		}
-	};
-
 	var stream = function(file) {
-		var SINGLE_FILE_LIMIT = 1024 * 1024 * 25;
-
-		// send up to 25MB file in one chunk
-		if (file.size < SINGLE_FILE_LIMIT) {
-			sendfile(file);
-			return;
-		}
-
-		// otherwise send in chunks
-		chunkfile(file);
+		var fs = new Filestream(file);
+		fs.sendFile();
 	};
 
 	// base function
 	var filestream = function(attrs) {
 		ondragover(attrs.el);
 		ondrop(attrs.el, attrs.url);
+	};
+
+	var Filestream = function(file) {
+		this.file = file;
+		this.SINGLE_FILE_LIMIT = 1024 * 1024 * 25;
+	};
+
+	Filestream.prototype.sendFile = function() {
+		var chunker = new Chunker(this.file);
+		while (chunk = chunker.nextSlice()) {
+			xhr({
+				blob: chunk,
+				name: this.file.name,
+				blobsize: chunk.size,
+				filesize: this.file.size
+			});
+		}
+	};
+
+	Filestream.prototype.xhr = function(filedata) {
+		var formdata = new FormData();
+		var xhr = new XMLHttpRequest();
+		Object.keys(filedata).forEach(function(key){
+			formdata.append(key, filedata[key]);
+		});
+		xhr.open('POST', filedata.url, false);
+		xhr.send(formdata);
+	};
+
+	var Chunker = function(file) {
+		this.file = file;
+		this.start = 0;
+		this.end = 0;
+		this.CHUNK_SIZE = 1024 * 1024 * 5;
+	};
+
+	Chunker.prototype.nextSlice = function() {
+		var chunk
+			, start = this.start
+			, end = this.end
+			, file = this.file
+			, size = file.size
+			, CHUNK_SIZE = this.CHUNK_SIZE;
+
+		end = start + size;
+
+		if (end > size) {
+			end = size;
+		}
+
+		if (file.mozSlice) {
+			chunk = file.mozSlice(start, end);
+		}
+		if (file.webkitSlice) {
+			chunk = file.webkitSlice(start, end);
+		}
+		if (file.slice) {
+			chunk = file.slice(start, end);
+		}
+
+		start = end;
+
+		if(chunk.size === 0) {
+			return null;
+		}
+
+		return chunk;
+	};
+
+	var noop = function(e) {
+		e.preventDefault();
+		e.stopPropagation();
 	};
 
 	// expose filestream to the window and as an AMD module

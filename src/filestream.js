@@ -17,47 +17,56 @@
 			var files = e.dataTransfer.files || e.target.files;
 			if (files.length) {
 				files = [].slice.call(files);
-				files.forEach(sendfile);
+				files.forEach(stream);
 			}
 		});
 	};
 
 	var sendfile = function(file) {
 		var fd = new FormData();
-		fd.append('file', file);
 		var xhr = new XMLHttpRequest();
+		fd.append('file', file);
+		fd.append('name', file.name);
+		fd.append('size', file.size);
 		xhr.open('POST', '/upload', false);
 		xhr.send(fd);
 	};
 
-	var chunk = function(file, start, end) {
-		if ( 'slice' in file ) {
-			return file.slice(start, end);
-		}
-		if ( 'mozSlice' in file ) {
-			return file.mozSlice(start, end);
-		}
-		if ( 'webkitSlice' in file ) {
-			return file.webkitSlice(start, end);
+	var chunkfile = function(file) {
+		var CHUNK_SIZE = 1024 * 1024 * 5;
+		var start = 0, end = 0, chunk;
+		while (start < file.size) {
+			end = start + CHUNK_SIZE;
+			if (end > file.size) {
+				end = file.size;
+			}
+
+			if (file.mozSlice) {
+				chunk = file.mozSlice(start, end);
+			}
+			if (file.webkitSlice) {
+				chunk = file.webkitSlice(start, end);
+			}
+			if (file.slice) {
+				chunk = file.slice(start, end);
+			}
+
+			sendfile(chunk);
+			start = end;
 		}
 	};
 
-	var stream = function(file, url) {
-		var CHUNK_SIZE = 1024 * 1024;
-		var size = file.size;
-		var start = 0;
-		var end = CHUNK_SIZE;
-		var chunk;
+	var stream = function(file) {
+		var SINGLE_FILE_LIMIT = 1024 * 1024 * 25;
 
-		if (size < CHUNK_SIZE) {
-			send(file, url);
+		// send up to 25MB file in one chunk
+		if (file.size < SINGLE_FILE_LIMIT) {
+			sendfile(file);
+			return;
 		}
 
-		while (start < size) {
-			send(chunk, url);
-			start = end;
-			end = start + CHUNK_SIZE;
-		}
+		// otherwise send in chunks
+		chunkfile(file);
 	};
 
 	// base function

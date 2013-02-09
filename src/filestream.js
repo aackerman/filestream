@@ -34,13 +34,15 @@
 
 	Filestream.prototype.sendFile = function() {
 		var chunker = new Chunker(this.file);
-		while (chunk = chunker.nextSlice()) {
+		while (slice = chunker.nextSlice()) {
 			this.xhr({
 				url: '/upload',
-				file: chunk,
-				blobsize: chunk.size,
+				file: slice.blob,
+				blobsize: slice.blob.size,
 				filename: this.file.name,
-				filesize: this.file.size
+				filesize: this.file.size,
+				startbyte: slice.startbyte,
+				endbyte: slice.endbyte
 			});
 		}
 	};
@@ -86,13 +88,19 @@
 			}
 		}
 
+		var slice = {
+			blob: chunk,
+			startbyte: this.start,
+			endbyte: this.end
+		};
+
 		this.start = this.end;
 
 		if(chunk.size === 0) {
 			return null;
 		}
 
-		return chunk;
+		return slice;
 	};
 
 	var noop = function(e) {

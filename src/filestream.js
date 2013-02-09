@@ -48,7 +48,7 @@
 	Filestream.prototype.xhr = function(filedata) {
 		var formdata = new FormData();
 		var xhr = new XMLHttpRequest();
-		formdata.append('file', filedata.file);
+		formdata.append('file', filedata.file, filedata.filename);
 		formdata.append('blobsize', filedata.blobsize);
 		formdata.append('filesize', filedata.filesize);
 		formdata.append('filename', filedata.filename);

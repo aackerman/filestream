@@ -19,84 +19,21 @@
 		});
 	};
 
-	// send blobdata as formdata with an xhr
-	var send = function(bd) {
-		var fd = new FormData();
-		var xhr = new XMLHttpRequest();
-		fd.append('file', bd.file, bd.filename);
-		fd.append('blobsize', bd.blobsize);
-		fd.append('filesize', bd.filesize);
-		xhr.open('POST', bd.url, false);
-		xhr.send(fd);
-	};
 
 	// stream a file in 5MB slices to a url
 	var stream = function(file, url) {
-		var slice, chunker = new Chunker(file);
-		while ( (slice = chunker.slice()) ) {
-			send({
-				url: url,
-				file: slice.blob,
-				blobsize: slice.blob.size,
-				filename: file.name,
-				filesize: file.size,
-				startbyte: slice.startbyte,
-				endbyte: slice.endbyte
-			});
-		}
+		var fd = new FormData();
+		var xhr = new XMLHttpRequest();
+		fd.append('file', file, file.name);
+		fd.append('size', file.size);
+		xhr.open('POST', url, false);
+		xhr.send(fd);
 	};
 
 	// base function
 	var filestream = function(attrs) {
 		ondragover(attrs.el);
 		ondrop(attrs.el, attrs.url);
-	};
-
-	// chunker holds a reference to a file an returns slices
-	var Chunker = function(file) {
-		this.file = file;
-		this.start = 0;
-		this.end = 0;
-		this.CHUNK_SIZE = 1024 * 1024 * 5;
-	};
-
-	// return the next slice of a file
-	Chunker.prototype.slice = function() {
-		var chunk
-			, start = this.start
-			, end = this.end
-			, file = this.file;
-
-		this.end = this.start + this.CHUNK_SIZE;
-
-		if (this.end > file.size) {
-			this.end = file.size;
-		}
-
-		if (file.slice) {
-			chunk = file.slice(this.start, this.end);
-		} else {
-			if (file.mozSlice) {
-				chunk = file.mozSlice(this.start, this.end);
-			}
-			if (file.webkitSlice) {
-				chunk = file.webkitSlice(this.start, this.end);
-			}
-		}
-
-		var slice = {
-			blob: chunk,
-			startbyte: this.start,
-			endbyte: this.end
-		};
-
-		this.start = this.end;
-
-		if(chunk.size === 0) {
-			return null;
-		}
-
-		return slice;
 	};
 
 	// prevent default form actions

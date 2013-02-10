@@ -20,21 +20,21 @@
 	};
 
 	var send = function(filedata) {
-		var formdata = new FormData();
+		var fd = new FormData();
 		var xhr = new XMLHttpRequest();
-		formdata.append('file', filedata.file, filedata.filename);
-		formdata.append('blobsize', filedata.blobsize);
-		formdata.append('filesize', filedata.filesize);
-		formdata.append('filename', filedata.filename);
-		xhr.open('POST', filedata.url, false);
-		xhr.send(formdata);
+		fd.append('file', fd.file, fd.filename);
+		fd.append('blobsize', fd.blobsize);
+		fd.append('filesize', fd.filesize);
+		fd.append('filename', fd.filename);
+		xhr.open('POST', fd.url, false);
+		xhr.send(fd);
 	};
 
 	var stream = function(file, url) {
 		var chunker = new Chunker(file);
 		while (slice = chunker.slice()) {
 			send({
-				url: '/upload',
+				url: url,
 				file: slice.blob,
 				blobsize: slice.blob.size,
 				filename: file.name,

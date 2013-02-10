@@ -19,17 +19,18 @@
 		});
 	};
 
-	var send = function(filedata) {
+	// send blobdata as formdata with an xhr
+	var send = function(bd) {
 		var fd = new FormData();
 		var xhr = new XMLHttpRequest();
-		fd.append('file', fd.file, fd.filename);
-		fd.append('blobsize', fd.blobsize);
-		fd.append('filesize', fd.filesize);
-		fd.append('filename', fd.filename);
-		xhr.open('POST', fd.url, false);
+		fd.append('file', bd.file, bd.filename);
+		fd.append('blobsize', bd.blobsize);
+		fd.append('filesize', bd.filesize);
+		xhr.open('POST', bd.url, false);
 		xhr.send(fd);
 	};
 
+	// stream a file in 5MB slices to a url
 	var stream = function(file, url) {
 		var slice, chunker = new Chunker(file);
 		while ( (slice = chunker.slice()) ) {
@@ -51,6 +52,7 @@
 		ondrop(attrs.el, attrs.url);
 	};
 
+	// chunker holds a reference to a file an returns slices
 	var Chunker = function(file) {
 		this.file = file;
 		this.start = 0;
@@ -58,6 +60,7 @@
 		this.CHUNK_SIZE = 1024 * 1024 * 5;
 	};
 
+	// return the next slice of a file
 	Chunker.prototype.slice = function() {
 		var chunk
 			, start = this.start
@@ -96,6 +99,7 @@
 		return slice;
 	};
 
+	// prevent default form actions
 	var noop = function(e) {
 		e.preventDefault();
 		e.stopPropagation();

@@ -19,8 +19,6 @@
 		});
 	};
 
-
-	// stream a file in 5MB slices to a url
 	var stream = function(file, url) {
 		var fd = new FormData();
 		var xhr = new XMLHttpRequest();

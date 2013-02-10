@@ -12,42 +12,14 @@
 			var files = e.dataTransfer.files || e.target.files;
 			if (files.length) {
 				files = [].slice.call(files);
-				files.forEach(stream);
+				files.forEach(function(file){
+					stream(file, url)
+				});
 			}
 		});
 	};
 
-	var stream = function(file) {
-		new Filestream(file).sendFile();
-	};
-
-	// base function
-	var filestream = function(attrs) {
-		ondragover(attrs.el);
-		ondrop(attrs.el, attrs.url);
-	};
-
-	var Filestream = function(file) {
-		this.file = file;
-		this.SINGLE_FILE_LIMIT = 1024 * 1024 * 25;
-	};
-
-	Filestream.prototype.sendFile = function() {
-		var chunker = new Chunker(this.file);
-		while (slice = chunker.nextSlice()) {
-			this.xhr({
-				url: '/upload',
-				file: slice.blob,
-				blobsize: slice.blob.size,
-				filename: this.file.name,
-				filesize: this.file.size,
-				startbyte: slice.startbyte,
-				endbyte: slice.endbyte
-			});
-		}
-	};
-
-	Filestream.prototype.xhr = function(filedata) {
+	var send = function(filedata) {
 		var formdata = new FormData();
 		var xhr = new XMLHttpRequest();
 		formdata.append('file', filedata.file, filedata.filename);
@@ -58,6 +30,27 @@
 		xhr.send(formdata);
 	};
 
+	var stream = function(file, url) {
+		var chunker = new Chunker(file);
+		while (slice = chunker.slice()) {
+			send({
+				url: '/upload',
+				file: slice.blob,
+				blobsize: slice.blob.size,
+				filename: file.name,
+				filesize: file.size,
+				startbyte: slice.startbyte,
+				endbyte: slice.endbyte
+			});
+		}
+	};
+
+	// base function
+	var filestream = function(attrs) {
+		ondragover(attrs.el);
+		ondrop(attrs.el, attrs.url);
+	};
+
 	var Chunker = function(file) {
 		this.file = file;
 		this.start = 0;
@@ -65,7 +58,7 @@
 		this.CHUNK_SIZE = 1024 * 1024 * 5;
 	};
 
-	Chunker.prototype.nextSlice = function() {
+	Chunker.prototype.slice = function() {
 		var chunk
 			, start = this.start
 			, end = this.end

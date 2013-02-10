@@ -13,7 +13,7 @@
 			if (files.length) {
 				files = [].slice.call(files);
 				files.forEach(function(file){
-					stream(file, url)
+					stream(file, url);
 				});
 			}
 		});
@@ -31,8 +31,8 @@
 	};
 
 	var stream = function(file, url) {
-		var chunker = new Chunker(file);
-		while (slice = chunker.slice()) {
+		var slice, chunker = new Chunker(file);
+		while ( (slice = chunker.slice()) ) {
 			send({
 				url: url,
 				file: slice.blob,

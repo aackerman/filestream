@@ -14,8 +14,8 @@
 	</div>
 	<style>
 		#dropload {
-			width: 100px;
-			height: 100px;
+			width: 150px;
+			height: 150px;
 			border: 1px dashed #333;
 		}
 	</style>
@@ -24,12 +24,21 @@
 		var qsa = function(selector){
 			return [].slice.call(document.querySelectorAll(selector));
 		};
+
 		document.addEventListener( "DOMContentLoaded", function(){
-			qsa('#dropload').forEach(function(el){
-				filestream({
-					el: el,
-					url: '/upload'
-				});
+			var el = qsa('#dropload')[0];
+
+			var promise = filestream({
+				el: el,
+				url: '/upload'
+			});
+
+			promise.then(function(response){
+				console.log(response);
+			});
+
+			promise.progress(function(progress){
+				console.log(progress);
 			});
 		}, false );
 	</script>
